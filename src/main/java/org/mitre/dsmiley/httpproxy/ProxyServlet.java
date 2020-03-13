@@ -102,6 +102,8 @@ public class ProxyServlet extends HttpServlet {
   /** A boolean parameter whether to use JVM-defined system properties to configure various networking aspects. */
   public static final String P_USESYSTEMPROPERTIES = "useSystemProperties";
 
+  public static final String P_REWRITECOOKIEPATH = "rewriteCookiePath";
+
   /** The parameter name for the target (destination) URI to proxy to. */
   protected static final String P_TARGET_URI = "targetUri";
   protected static final String ATTR_TARGET_URI =
@@ -119,6 +121,7 @@ public class ProxyServlet extends HttpServlet {
   protected boolean doPreserveCookies = false;
   protected boolean doHandleRedirects = false;
   protected boolean useSystemProperties = true;
+  protected boolean doRewriteCookiePath = true;
   protected int connectTimeout = -1;
   protected int readTimeout = -1;
   protected int connectionRequestTimeout = -1;
@@ -205,6 +208,11 @@ public class ProxyServlet extends HttpServlet {
     String useSystemPropertiesString = getConfigParam(P_USESYSTEMPROPERTIES);
     if (useSystemPropertiesString != null) {
       this.useSystemProperties = Boolean.parseBoolean(useSystemPropertiesString);
+    }
+
+    String rewriteCookiePath = getConfigParam(P_REWRITECOOKIEPATH);
+    if (rewriteCookiePath != null) {
+      this.doRewriteCookiePath = Boolean.parseBoolean(rewriteCookiePath);
     }
 
     initTarget();//sets target*
@@ -540,7 +548,11 @@ public class ProxyServlet extends HttpServlet {
       Cookie servletCookie = new Cookie(proxyCookieName, cookie.getValue());
       servletCookie.setComment(cookie.getComment());
       servletCookie.setMaxAge((int) cookie.getMaxAge());
-      servletCookie.setPath(path); //set to the path of the proxy servlet
+      if (doRewriteCookiePath) {
+        servletCookie.setPath(path); //set to the path of the proxy servlet
+      } else {
+        servletCookie.setPath(cookie.getPath());
+      }
       // don't set cookie domain
       servletCookie.setSecure(cookie.getSecure());
       servletCookie.setVersion(cookie.getVersion());
